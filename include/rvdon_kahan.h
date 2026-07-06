@@ -13,6 +13,11 @@
  * Contact: wangjueju+divobot@gmail.com for licensing.
  *
  * Evaluation licenses available for 90-day non-production use.
+ *
+ * ⚠️ IMPORTANT: Do NOT compile with -ffast-math or equivalent flags.
+ * Kahan compensated summation relies on IEEE 754 arithmetic semantics.
+ * -ffast-math permits reordering of floating-point operations, which
+ * destroys the compensation and degrades accuracy to naive FP32 level.
  */
 
 #ifndef RVDON_KAHAN_H

@@ -6,25 +6,29 @@ RVDon Kahan is a software library that provides Kahan-compensated force accumula
 
 ## Why RVDon Kahan?
 
-Classical MD simulations accumulate force contributions from thousands of neighbor atoms per timestep. Naive FP32 accumulation causes energy drift of ~1e-4 per step — violating the 1e-6 conservation threshold required for production MD. RVDon Kahan reduces this drift to **< 1e-6 per step** using compensated summation on existing FP32 hardware.
+Classical MD simulations accumulate force contributions from hundreds of neighbor atoms per timestep. Naive FP32 accumulation error grows as O(Nε), where N is the number of neighbors and ε ≈ 1.2×10⁻⁷. RVDon Kahan reduces this to **O(ε)** using compensated summation on existing FP32 hardware — at zero hardware cost.
 
-| Method | Accumulation Error | Energy Drift/Step | Hardware Cost |
+| Method | Per-Addition Error | Energy Drift/Step | Hardware Cost |
 |--------|:---:|:---:|:---:|
-| Naive FP32 | O(Nε) ≈ 1.2e-4 | ~1e-4 | Baseline |
-| **RVDon Kahan (FP32)** | **O(ε) ≈ 1.2e-7** | **< 1e-6** | **0% (software)** |
+| Naive FP32 | O(Nε) — grows with neighbors | depends on system density | Baseline |
+| **RVDon Kahan (FP32)** | **O(ε) — constant** | **< 1e-6/step** | **0% (software)** |
 | FP64 Hardware | O(ε₆₄) ≈ 2.2e-16 | ~1e-15 | ~30% TCU area |
 
-The Kahan FP32 result is **1000× better than the MD conservation threshold**, and **3 orders of magnitude** better than naive FP32 — at zero hardware cost.
+**Important nuance (disclosed after independent red-team verification):** The Kahan advantage over naive FP32 is **density-dependent**:
+- **Dense systems** (N_neighbors > 100): Kahan improves accumulation accuracy by **50-100×** over naive
+- **Sparse systems** (N_neighbors < 50): Kahan and naive FP32 give similar results — accumulation error is small compared to other error sources (Verlet integration, force computation)
 
-## Validated Results
+In both cases, Kahan FP32 meets the **< 1e-6/step energy conservation threshold** required for production MD.
 
-| Test | Result | Threshold |
-|------|:---:|:---:|
-| Single-atom force accuracy (2000 neighbors) | Relative error < 1e-5 | < 1e-4 |
-| 256-atom LJ system RMS force error | Relative error < 1e-4 | < 1e-4 |
-| Energy drift (27-atom cluster, 1000 steps) | **8.99e-7/step** | < 1e-6/step |
+## Validated Results (Independent Red-Team Reproduced)
 
-All tests validated against FP64 Kahan reference implementation.
+| Test | DiVo Result | Red-Team Result | Threshold |
+|------|:---:|:---:|:---:|
+| Single-atom force accuracy (2000 neighbors) | rel err < 1e-5 | rel err = 3.06e-8 | < 1e-4 |
+| 256-atom LJ system RMS force error | rel err < 1e-4 | rel err = 1.19e-6 | < 1e-4 |
+| Energy drift (27-atom cluster, 1000 steps) | 8.99e-7/step | **2.13e-7/step** | < 1e-6/step |
+
+Both DiVo and independent red-team results pass all thresholds.
 
 ## Quick Start
 
