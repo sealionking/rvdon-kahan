@@ -104,7 +104,10 @@ void rvdon_force_accum_pair(rvdon_force_acc_t **forces, int i, int j,
  * @param sigma     LJ sigma parameter
  * @param epsilon   LJ epsilon parameter
  * @param r_cut     Cutoff distance (beyond this, force = 0)
- * @param fx,fy,fz  Output: force on atom i
+ * @param fx,fy,fz  Output: force on atom i.
+ *                  符号约定（2026-09-15 三轨交叉验证确认）：F_i = (dV/dr)/r · (dx,dy,dz)，
+ *                  即近距排斥时 F_i 指向 −dx（远离 j），远距吸引时指向 +dx。
+ *                  实现须满足 F_i = −24ε/r²·(2(σ/r)¹²−(σ/r)⁶)·(dx,dy,dz)。
  * @return          Potential energy at this distance
  */
 float rvdon_lj_force(float dx, float dy, float dz,
